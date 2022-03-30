@@ -4,8 +4,8 @@ import (
 	"log"
 	"video-enconder/domain"
 
-	_ "github.com/mattn/go-sqlite3"
-	_ "https://github.com/lib/pq"
+	_ "github.com/lib/pq"
+	"gorm.io/driver/sqlite"
 	gorm "gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -43,17 +43,27 @@ func NewDbTest() *gorm.DB {
 }
 
 func (d *Database) Connect() (*gorm.DB, error) {
-	var err error
+	// var err error
 
 	if d.Env != "Test" {
-		d.Db, err = gorm.Open(d.DbType, d.Dsn)
+		// d.Db, err = gorm.Open(d.DbType, d.Dsn)
+		db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+		d.Db = db
+		if err != nil {
+			return nil, err
+		}
 	} else {
-		d.Db, err = gorm.Open(d.DbType, d.DsnTest)
+		db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+		d.Db = db
+		// d.Db, err = gorm.Open(d.DbTypeTest, d.DsnTest)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	if err != nil {
-		return nil, err
-	}
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	if d.Debug {
 		d.Db.Config.Logger.LogMode(logger.Info)
@@ -61,7 +71,6 @@ func (d *Database) Connect() (*gorm.DB, error) {
 
 	if d.AutoMigrateDb {
 		d.Db.AutoMigrate(&domain.Video{}, &domain.Job{})
-		// d.Db.Model(domain.Job{}).
 	}
 
 	return d.Db, nil
